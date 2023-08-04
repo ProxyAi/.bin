@@ -1,2 +1,3 @@
-# .bin
-A collection of bash scripts for my person Linux station.
+# ~/.bin
+
+A collection of bash scripts and utils in bash.
