@@ -3,7 +3,7 @@
 # Author: admin@xoren.io
 # Script: update_theme.sh
 # Link https://github.com/xorenio
-# Description: Script change out the grub background and logo images .
+# Description: Script keep Tokyo-Night-GTK-Theme updated locally via the github repo.
 
 ## START - CONFIGS
 
@@ -24,7 +24,7 @@ LOCAL_VERSION_FILE="${DESTINATION_DIRECTORY}/${THEME_FOLDER}/.version"
 
 ## START - FUNCTIONS
 
-# START - SPINNER
+### START - SPINNER
 
 # Function: _spinner
 # Description: Display a spinner animation.
@@ -77,10 +77,10 @@ _spinner() {
   echo -n -e '\e[?25h'
 }
 
-# END - SPINNER
+### END - SPINNER
 
 
-# START - RUNNING FILE
+### START - RUNNING FILE
 
 SCRIPT_RUNNING_FILE=${SCRIPT_RUNNING_FILE:-"${HOME}/${GITHUB_REPO_NAME}_running.txt"}
 
@@ -118,10 +118,10 @@ _delete_running_file() {
     cd "${STARTING_LOCATION}" || cd "$HOME" || return
 }
 
-# END - RUNNING FILE
+### END - RUNNING FILE
 
 
-# START - EXIT SCRIPT
+### START - EXIT SCRIPT
 
 # Function: _exit_script
 # Description: Graceful exiting of script.
@@ -134,10 +134,10 @@ _exit_script() {
     exit;
 }
 
-# END - EXIT SCRIPT
+### END - EXIT SCRIPT
 
 
-# START - GITHUB API
+### START - GITHUB API
 
 # Function: _get_project_github_latest_sha
 # Description: Curls the github api for commit latest sha.
@@ -163,32 +163,50 @@ _get_project_github_latest_sha() {
         return;
     fi
 }
-# END - GITHUB API
+### END - GITHUB API
 
-# START - UPDATE
+### START - UPDATE
 
-# Function: _get_project_github_latest_sha
-# Description: Curls the github api for commit latest sha.
+# Function: _update
+# Description: Does the moving and the shaking of the theme directories and files.
 # Parameters: None
 # Returns: None
 
 _update() {
 
-    cd "$SCRIPT_DIR"
+    _clean_up
 
-    git clone -q https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git &
+    cd "$SCRIPT_DIR" || _exit_script
 
-    _spinner $! "Downloading New Copy of Theme" "Downloaded New Copy of Theme"
+    git clone -q "https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git" &
 
+    _spinner $! "Downloading fresh copy of theme" "Downloaded fresh copy of theme"
 
-    cp -R --update "${GITHUB_REPO}/${THEME_FOLDER}" "$DESTINATION_DIRECTORY/"
+    cp -R --update "${GITHUB_REPO:?}/${THEME_FOLDER:?}" "${DESTINATION_DIRECTORY:?}/"
 
-    _spinner $! "Updating Theme Directory" "Updated Theme Directory"
+    _spinner $! "Updating theme directory" "Updated theme directory"
 
     echo "$remote_version" > "$LOCAL_VERSION_FILE"
-}
-# END - UPDATE
 
+    _clean_up
+}
+### END - UPDATE
+
+### START - CLEAN-UP
+
+# Function: _clean_up
+# Description: Deletes left over directories and files.
+# Parameters: None
+# Returns: None
+
+_clean_up() {
+    if [ -d "${SCRIPT_DIR:?}/${GITHUB_REPO:?}/" ]; then
+        rm -rf "${SCRIPT_DIR:?}/${GITHUB_REPO:?}/"
+        _spinner $! "Deleting local theme repo directory" "Deleted local theme repo directory"
+    fi
+}
+
+### END - CLEAN-UP
 
 ## END - FUNCTIONS
 
@@ -199,28 +217,44 @@ _check_running_file
 
 _create_running_file
 
+# Create destination directory -p no error if exists
+mkdir "${DESTINATION_DIRECTORY}/" -p
 
+# Check for destination theme directory
 if [[ -d "${DESTINATION_DIRECTORY}/${THEME_FOLDER}" ]]; then
-  if [[ -f "${DESTINATION_DIRECTORY}/${THEME_FOLDER}/.version" ]]; then
-    version=$(cat "$LOCAL_VERSION_FILE")
-    remote_version=$(_get_project_github_latest_sha);
-    if [[ "$remote_version" = "0" ]]; then
-      echo "Error: github api failure."
-    fi
-    if [[ "$remote_version" -ne "$version" ]]; then
-      _update
-    fi
-    _exit_script
-  else
-    _update
-    _exit_script
-  fi
+    # Check for .version file in theme folder
+    if [[ -f "${DESTINATION_DIRECTORY}/${THEME_FOLDER}/.version" ]]; then
 
-  rm -R ${GITHUB_REPO}/ & 
-  _spinner $! "Deleting Old Theme Directory" "Deleted Old Theme Directory"
+        # Set version variable value from file content
+        version=$(cat "$LOCAL_VERSION_FILE")
+        # Set remote version variable value from curl wrapped function
+        remote_version=$(_get_project_github_latest_sha);
+
+        # Check remote variable for fail state
+        if [[ "$remote_version" = "0" ]]; then
+
+            # If curl failed exit script
+            echo "Error: github api failure."
+            _exit_script
+        fi
+
+        # Compare version strings
+        if [[ "$remote_version" -ne "$version" ]]; then
+            # Don't match, run update function
+            _update
+        fi
+        _exit_script
+    else
+        # No version file, run update function
+        _update
+        _exit_script
+    fi
+else
+    # No destination theme directory, run update function
+    _update
 fi
 
+# Delete running file and exit script.
 _exit_script
-exit
 
 ## END - MAIN RUNTIME

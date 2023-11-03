@@ -1,3 +1,3 @@
 # ~/.bin
 
-A collection of bash scripts and utils in bash.
+A collection of bash scripts and utilities.

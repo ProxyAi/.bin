@@ -1,6 +1,6 @@
 # ~/.bin/theme
 
-A collection of scripts to theme my linux install.
+A collection of scripts to theme my Linux install.
 
 ## Desktop environment theme
 

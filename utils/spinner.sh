@@ -3,7 +3,7 @@
 # Author: admin@xoren.io
 # Script: progress.sh
 # Link https://github.com/xorenio
-# Description: A script to disable a spinner for processes.
+# Description: A script to display a spinner for processes.
 
 # Check if the terminal supports certain capabilities
 # has_ascii_support() {
