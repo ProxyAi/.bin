@@ -83,7 +83,11 @@ while true; do
     sleep 0.2
     # Check for 'q' keypress
     read -n 1 -t 0.3 key
-    if [[ $key == "q" ]]; then
+    if [[ $key == "r" ]]; then
+        highest_memory_usage=0
+
+        lowest_memory_usage=$(free -m | grep Mem | awk '{print $2}')
+    elif [[ $key == "q" ]]; then
         stty $(stty -g)  # Reset terminal settings
         clear
         exit
